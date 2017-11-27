@@ -7,7 +7,7 @@ output: .Rdata & .csv
         
         #Complete chloroplast genome located at hestia at:
         /seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats/Arabidopsis_chrCp_chromosome_without_2_ir.fa
-        
+         
 31.08.17   
 ###
 
