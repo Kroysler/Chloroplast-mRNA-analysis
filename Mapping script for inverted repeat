@@ -51,7 +51,7 @@ if (( ${#FILES[@]}>0 ));
         #Complete chloroplast genome located at hestia at:
         /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats/Arabidopsis_chrCp_chromosome_without_2_ir.fa
                 
-        #MAPPING d. 27.11.17 ca. 13:00-  - 2 timer og 35 mins
+        #MAPPING d. 27.11.17 ca. 12:43-  -  timer og  mins
         #1. Building bowtie2 index for mapping:
         #In “/binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles”
         #Main arguments
