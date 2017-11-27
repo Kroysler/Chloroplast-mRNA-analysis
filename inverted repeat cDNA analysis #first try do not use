@@ -1,0 +1,238 @@
+--
+title: "Re-mapped: Arabidopsis chloroplast mRNA structure analysis"
+author:"Christel Enroth"
+date:  "30th August 2017"
+output: .Rdata & .csv
+---
+        
+        #Complete chloroplast genome located at hestia at:
+        /seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats/Arabidopsis_chrCp_chromosome_without_2_ir.fa
+        
+31.08.17   
+###
+
+Guide for RNA probing software: http://people.binf.ku.dk/lukasz/Guide.html
+Using cutadapt to remove adapter sequences and trim by length/quality:
+        cutadapt -a $ADAPTER_SEQUENCE -q 17  -m 20 output.fastq input.fastq
+
+Adapter removal, preprosessing has been performed in an earlier analysis. 
+
+
+#MAPPING	
+
+1. Building bowtie2 index for mapping:
+        In "/seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats"
+Main arguments
+bowtie2-build [options]* <reference_in> <ebwt_base>
+        fasta filename: Arabidopsis_chrCp_chromosome_without_2_ir.fa
+###
+#
+
+#31.08.17 at ~14:40
+cd /seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats 
+bowtie2-build Arabidopsis_chrCp_chromosome_without_2_ir.fa Arabidopsis_chrCp_chromosome_without_2_ir_index
+
+
+# 05.09.17 at ~14:39
+for i in 1 2 3 4 5 6 8 9 10 11
+do
+cd /seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_2/$i
+nice bowtie2 -p32 --very-sensitive -x /seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats/Arabidopsis_chrCp_chromosome_without_2_ir_index -U ./output_dir/read1.fastq.gz 2>bowtie2_chrCp_chromosome_without_2_ir.error | gzip > chrCp_mapped_without_2_ir.sam.gz
+nice /seqdata/krogh/gwx263/scratch/Processed_Seqdata/scripts/rnaprob_scripts/summarize_unique_barcodes.sh -f chrCp_mapped_without_2_ir.sam.gz -b ./output_dir/barcodes.txt -t -k -o summarized_chrCp_without_2_ir & 
+done
+wait
+
+#It outputs the folder summarized_chrCp which contains "unique_barcodes.txt","summary.txt","read_counts.txt","trimming_stats.txt".
+
+
+#After mapping and summarizing, I move on to calculating EUC and GR´s:
+
+
+#for Arabidopsis chloroplast full genome:
+#Calculate EUC´s
+
+cd /seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_2
+
+R
+
+library(RNAprobR)
+
+dir_names <- format(c(1,2,3,4,5,6,8,9,10,11), width=1, flag=0,trim=TRUE)
+
+#05.09.17 ca. 09:30
+#Read in the count information, and convert observed unique barcodes to estimated unique counts:
+
+euc_GRs_chrCp_without_2_ir <- list()
+
+for(index in dir_names) {
+        
+        euc_GRs_chrCp_without_2_ir[[index]] <- readsamples(samples=paste("./",index,"/summarized_chrCp_without_2_ir/unique_barcodes.txt", sep=""), euc="counts")
+}
+
+#Compile positional information:
+
+comp_GRs_chrCp_without_2_ir<- list()
+
+for(index in dir_names){
+        
+        comp_GRs_chrCp_without_2_ir[[index]] <- comp(euc_GRs_chrCp_without_2_ir[[index]], fasta_file="/seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats/Arabidopsis_chrCp_chromosome_without_2_ir.fa")
+        
+}
+
+#Save R objects for future fast loading with the load():
+
+save(euc_GRs_chrCp_without_2_ir, file="euc_GRs_chrCp_without_2_ir.Rsave")
+
+save(comp_GRs_chrCp_without_2_ir, file="comp_GRs_chrCp_without_2_ir.Rsave")
+
+####
+
+
+
+temp1 <- GR2norm_df(comp_GRs[[1]])
+boxplot(temp1$TC, ylim=c(0,1000))
+save(boxplot, file="boxplot.Rsave")
+
+library(GenomicRanges)
+library(RNAprobR)
+library(Rsamtools)
+library("yarrr")
+
+sample_names<-c("Ara1 Technical Rep 1","Ara2 Biological Rep 2", "Ara3 Technical Rep 3","Ara4 NAI-N3","Ara5 DMSO","Ara6 1 mM Mg","Ara8 t=0 Rep 1","Ara9 t=0 Rep 2","Ara10 t=24 Rep 1","Ara11 t=24 Rep 2")
+load("C:/Users/gwx263/OneDrive - Københavns Universitet/Ph.D/Probe mRNA structure in chloroplasts/Seq data processing & Debian/Feb 2017 analyse af interessante transcripts/chrCP_without_2_ir analysis/comp_GRs_chrCp_without_2_ir.Rsave")
+load("C:/Users/gwx263/OneDrive - Københavns Universitet/Ph.D/Probe mRNA structure in chloroplasts/Seq data processing & Debian/Feb 2017 analyse af interessante transcripts/chrCP_without_2_ir analysis/euc_GRs_chrCp_without_2_ir.Rsave")
+
+
+#Normalisation
+index 1-3 are selection indicies with total RNA=> Perform winsorisation normalisation
+For the remaining samples different, either rRNA depletion or lightstress sets them apart.
+
+index4-5 are probed/unprobed unselected total RNA. 
+These samples can be normalised with slograt function windowsize 1 and then winsorised with the winsor or swinsor_vector function.
+###
+
+
+chrCp_without_2_ir_list<-list()
+for (i in c(1:10))
+{
+        #normalizing data with swinsor
+        chrCp_without_2_ir_swinsored <- swinsor(comp_GRs_chrCp_without_2_ir[[i]], winsor_level = 0.90, window_size = 50, only_top = TRUE)
+        #adding unnormalized dataframe, convert to non GR dataframe and removing all extra columns but cover
+        chrCp_without_2_ir_swinsored <- compdata(comp_GRs_chrCp_without_2_ir[[i]], chrCp_without_2_ir_swinsored, nt_offset=1)
+        m <- GR2norm_df(chrCp_without_2_ir_swinsored)
+        #m <- m[m$RNAid == "AT2G01010.1",]
+        m <- m[, -c( 1, 3, 6, 7, 9)]
+        
+        names(m)<- paste(names(m), "Sample", i)
+        colnames(m)[1]<-"Pos"
+        chrCp_without_2_ir_list[[i]] <- m
+}
+names(chrCp_without_2_ir_list)<-sample_names
+chrCPdf_without_2_ir_top<-Reduce(function(x,y) {merge(x,y, all=TRUE, by="Pos")}, chrCp_without_2_ir_list)
+chrCPdf_without_2_ir_top[chrCPdf_without_2_ir_top == 0] <- NA
+
+
+save(chrCPdf_without_2_ir_top, file="chrCPdf_without_2_ir.Rsave")
+
+write.csv(chrCPdf_without_2_ir_top, file = "chrCPdf_without_2_ir.csv", row.names = F)
+
+###
+#ROC curve analysis with Coverage treshhold and excluding -rRNA samples:
+
+chrCPdf1<-chrCPdf_without_2_ir_top
+# vector of samples ordered according to COverage from highest to lowest c(3,4,1,2,5,9,8,6,7,10)
+#k<-c(3,4,1,2,5,9,8,6,7,10)
+k<-c(1,2,3,4,5,6,7,8,9,10)
+
+#Evaluate how many pass the threshold:
+for (i in k)
+{
+        g<-paste(sample_names[i])
+        chrCPdf1<-chrCPdf1[which(chrCPdf1[,paste("Cover Sample ", i, sep = "")]>10), ]
+        
+        f<-length(which(chrCPdf_without_2_ir_top[,paste("Cover Sample ", i, sep = "")]>10))
+        print(paste("# of hits above threshold in", g , ":", f))    
+}
+
+#Set values below threshold to zero:
+coverage_columns<-c(grep("Cover",names(chrCPdf_without_2_ir_top)))
+
+for (i in coverage_columns){
+        chrCPdf1[ ,(i-2)][chrCPdf1[,i]<3]<-NA    
+}
+
+for (i in coverage_columns){
+        chrCPdf1[ ,(i-1)][chrCPdf1[,i]<3]<-NA    
+}
+
+for (i in coverage_columns){
+        chrCPdf1[ ,i][chrCPdf1[,i]<3]<-NA    
+}
+## Remove all rows that only have NA´s (by summin the rows that have NAs and retaining those that are not the number of columns)
+
+chrCP_fewest_NAs<-chrCPdf1[rowSums(is.na(chrCPdf1)) !=(ncol(chrCPdf1)-1),]
+
+##Remove all rows that are incomplete
+
+chrCPdf1_complete<-chrCPdf1[complete.cases(chrCPdf1),]
+
+save(chrCPdf1_complete, file="chrCP_complete_without_2_ir_top.Rsave")
+save(chrCP_fewest_NAs, file="chrCP_fewest_NAs_without_2_ir_top.Rsave")
+
+write.csv(chrCPdf1_complete, file = "chrCP_complete_without_2_ir_top.csv", row.names = F)
+write.csv(chrCP_fewest_NAs, file = "chrCP_fewest_NAs_without_2_ir_top.csv", row.names = F)
+
+
+#Remove Coverage & swinsor.sd columns:
+chrCPdf3<-chrCPdf
+coverage_columns<-c(grep("Cover",names(chrCPdf)))
+coverage_columns<-coverage_columns-2
+chrCPdf3 <- chrCPdf[ ,(coverage_columns)]
+
+is.na(chrCPdf1)
+
+#Transposing for PCA PLOT
+chrCPdf3<-t(chrCPdf3)
+
+###Complete dataframe as above but with coverage threshold of 30:
+chrCPdf20<-chrCPdf
+coverage_columns<-c(grep("Cover",names(chrCPdf)))
+for (i in coverage_columns){
+        chrCPdf20[ ,(i-2)][chrCPdf20[,i]<20]<-NA    
+}
+for (i in coverage_columns){
+        chrCPdf20[ ,(i-1)][chrCPdf20[,i]<20]<-NA    
+}
+for (i in coverage_columns){
+        chrCPdf20[ ,i][chrCPdf20[,i]<20]<-NA    
+}
+
+coverage_columns<-c(grep("Cover",names(chrCPdf20)))
+coverage_columns<-coverage_columns-2
+chrCPdf20_complete <- chrCPdf20[ ,(coverage_columns)]
+
+###
+#Retain sample 8-11
+
+#chrCPdf20_complete<-chrCPdf20_complete[-(1:6)]
+chrCPdf20_complete<-chrCPdf20_complete[-(4:6)]
+
+
+chrCPdf20_complete<-chrCPdf20_complete[rowSums(is.na(chrCPdf20_complete)) !=(ncol(chrCPdf20_complete)-1),]
+
+chrCPdf20_complete<-chrCPdf20_complete[complete.cases(chrCPdf20_complete),]
+
+
+
+#As the PCA cannot work on dataframe where all samples have the same value (no variance) I remove all the entries where the rowsum is equal to the number of columns.
+chrCPdf20_complete<-chrCPdf20_complete[rowSums(chrCPdf20_complete) !=7,]
+chrCPdf20_complete<-t(chrCPdf20_complete)
+
+
+
+
+
+# The palette with black:
+cbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7","#999999","#0066CC","#CC6666", "#9999CC", "#66CC99")
+##
+Swinsor are the termination counts (the times the RT stopped at a particular position) that have been normalized. We have three different ways of normalizing depending on the kind of control that we can normalize to and in this case the samples were winsorized. In winsorization you calculate the standard deviation etc. and take the outliers and set them at a predefined value, in this case the 90 percentile. In the structure data we sometimes have extreme outliers, so this is a way of uniforming the data. When we do it, we do it in a "sliding window" so that the 90 percentile is calculated from the sourrounding counts (to remove the affect of differences in coverage along the RNA). This is what I meant when I say the window size of 30,50, 100 etc. The "cover" is the Coverage, i.e. how many times was this position sequenced. I spent some time adding it back to the data (it is usually removed in the normalization), so that you and your collegues could remove datapoint below certain coverage thresholds, as point with low coverage may not be trustworthy. Instead of setting the threshold before I gave you the data, you can play around with it yourselves, depending on your preferences and analysis   In the ROC curve I have used data with a coverage above 20.
