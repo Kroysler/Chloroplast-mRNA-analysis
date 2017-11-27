@@ -85,7 +85,46 @@ if (( ${#FILES[@]}>0 ));
         wait 
         
         --------------------------------
+        --------------------------------
       
         After mapping and summarizing, I move on to calculating EUC and GR´s:
                 
-         
+                
+        for chloroplast cdna:
+        #Calculate EUC´s
+                
+        cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_2/$i
+        
+        R
+        
+        library(RNAprobR)
+        
+        dir_names <- format(c(1,2,3,4,5,6,8,9,10,11), width=1, flag=0,trim=TRUE)
+        
+        #Read in the count information, and convert observed unique barcodes to estimated unique counts:
+        
+        euc_GRs_without_2_ir2 <- list()
+        
+        for(index in dir_names) {
+                
+                euc_GRs_without_2_ir2[[index]] <- readsamples(samples=paste("./",index,"/summarized_chrCp_without_2_ir2/unique_barcodes.txt", sep=""), euc="HRF-Seq", k2n_files = paste("./",index,"/summarized_chrCp_without_2_ir2/k2n.txt", sep=""))
+        }
+        
+        #Compile positional information:
+        
+        comp_GRs_without_2_ir2 <- list()
+        
+        for(index in dir_names){
+                
+                comp_GRs_without_2_ir2[[index]] <- comp(euc_GR=euc_GRs_without_2_ir2[[index]], fasta_file="/binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats/Arabidopsis_chrCp_chromosome_without_2_ir.fa")
+                
+        }
+        
+        #Save R objects for future fast loading with the load():
+        
+        save(euc_GRs_without_2_ir2, file="euc_GRs.Rsave")
+        
+        save(comp_GRs_without_2_ir2, file="comp_GRs.Rsave")
+        
+                
+        
