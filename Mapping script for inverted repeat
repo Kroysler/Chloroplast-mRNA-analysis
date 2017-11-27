@@ -1,0 +1,85 @@
+13.10.16 
+#I have many empty entries after cutadapt/preprocessing, so I am redoing it.
+#Guide for RNA probing software: http://people.binf.ku.dk/lukasz/Guide.html
+#Using cutadapt to remove adapter sequences and trim by length/quality:
+#cutadapt –a $ADAPTER_SEQUENCE –q 17  –m 40 output.fastq input.fastq
+
+
+Removing adapters and low quality reads 10:44-11:05 25 mins
+
+mkdir /seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters
+cd /seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters 
+proj=chloroplast_2
+mkdir /seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/$proj #create folder for project
+for lab_number in 1 2 3 4 5 6 8 9 10 11
+do
+FILES=(/seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/"$lab_number"-*R1*.fastq.gz)
+if (( ${#FILES[@]}>0 ));
+        then
+        cd /seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/$proj
+        mkdir $lab_number
+        cd $lab_number
+        nice zcat /seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/"$lab_number"-*R1*.fastq.gz | nice cutadapt -a AGATCGGAAGAGCACACGTCT -q 17 -m 40 - 2>$proj.$lab_number.R1.cutadapt.error | gzip > "$lab_number"-*R1*.fastq.gz &
+                fi
+        done
+        wait
+        
+        Preprocessing reads: ca. 9:35-12:31 (ca. 3 timer)
+        mkdir -p /seqdata/krogh/gwx263/scratch/Processed_Seqdata/scripts/rnaprob_scripts 
+        cd /seqdata/krogh/gwx263/scratch/Processed_Seqdata/scripts/rnaprob_scripts
+        wget http://people.binf.ku.dk/~jvinther/data/rna_probing/RNAprobBash.tar.gz
+        tar -zxf RNAprobBash.tar.gz
+        PATH=$PATH:/seqdata/krogh/gwx263/scratch/Processed_Seqdata/scripts/rnaprob_scripts
+        # Add the scripts location to the path 
+        
+        for i in 1 2 3 4 5 6 8 9 10 11
+        do
+        
+        cd /seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_2/$i 
+        /seqdata/krogh/gwx263/scratch/Processed_Seqdata/scripts/rnaprob_scripts/preprocessing.sh -b NNNNNNN -t 15 -1 $i-*R*.fastq.gz
+        gzip ./output_dir/read1.fastq
+        done
+        --------------------------------
+                
+        ---
+        title: "Re-mapped: Arabidopsis chloroplast mRNA structure analysis"
+        author:"Christel Enroth"
+        date:  "30th August 2017"
+        output: .Rdata & .csv
+        ---
+                
+        #Complete chloroplast genome located at hestia at:
+        /binf-isilon/vintherlab/christel/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats/Arabidopsis_chrCp_chromosome_without_2_ir.fa
+                
+        #MAPPING d. 27.11.17 ca. 13:00-  - 2 timer og 35 mins
+        #1. Building bowtie2 index for mapping:
+        #In “/binf-isilon/vintherlab/christel/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles”
+        #Main arguments
+        #bowtie2-build [options]* <reference_in> <ebwt_base>
+        fasta filename: Arabidopsis_chrCp_chromosome_without_2_ir.fa
+                
+        cd /binf-isilon/vintherlab/christel/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats
+        bowtie2-build Arabidopsis_chrCp_chromosome_without_2_ir.fa Arabidopsis_chrCp_chromosome_without_2_ir_index
+        
+        
+        for i in 1 2 3 4 5 6 8 9 10 11
+        do
+        cd /binf-isilon/vintherlab/christel/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_2/$i
+        nice bowtie2 -p32 --very-sensitive -x /binf-isilon/vintherlab/christel/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats/Arabidopsis_chrCp_chromosome_without_2_ir_index -U ./output_dir/read1.fastq.gz 2>bowtie2.error | gzip > chrCp_mapped_without_2_ir2.sam.gz
+        nice /binf-isilon/vintherlab/christel/gwx263/scratch/Processed_Seqdata/scripts/rnaprob_scripts/summarize_unique_barcodes.sh -f chrCp_mapped_without_2_ir2.sam.gz -b ./output_dir/barcodes.txt -t -k -o summarized_chrCp_without_2_ir2 &
+                
+        done
+        wait
+        
+        
+        #Flagstat for inverted chloroplast cdna: ca. kl. -  1,5 hours
+        
+        for i in 1 2 3 4 5 6 8 9 10 11
+        do
+        cd /binf-isilon/vintherlab/christel/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_2/$i
+        gzip -k -d chrCp_mapped_without_2_ir2.sam.gz
+        mkdir -p ./bamfiles/flagstat
+        nice samtools view -b -u chrCp_mapped_without_2_ir2.sam >./bamfiles/chrCp_mapped_without_2_ir2.bam
+        nice samtools flagstat ./bamfiles/chrCp_mapped_without_2_ir2.bam > ./bamfiles/flagstat/chrCp_mapped_without_2_ir2.bam_flagstats$i
+        done
+        wait 
