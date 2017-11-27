@@ -44,29 +44,29 @@ if (( ${#FILES[@]}>0 ));
         ---
         title: "Re-mapped: Arabidopsis chloroplast mRNA structure analysis"
         author:"Christel Enroth"
-        date:  "30th August 2017"
+        date:  "27th November 2017"
         output: .Rdata & .csv
         ---
                 
         #Complete chloroplast genome located at hestia at:
-        /binf-isilon/vintherlab/christel/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats/Arabidopsis_chrCp_chromosome_without_2_ir.fa
+        /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats/Arabidopsis_chrCp_chromosome_without_2_ir.fa
                 
         #MAPPING d. 27.11.17 ca. 13:00-  - 2 timer og 35 mins
         #1. Building bowtie2 index for mapping:
-        #In “/binf-isilon/vintherlab/christel/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles”
+        #In “/binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles”
         #Main arguments
         #bowtie2-build [options]* <reference_in> <ebwt_base>
         fasta filename: Arabidopsis_chrCp_chromosome_without_2_ir.fa
                 
-        cd /binf-isilon/vintherlab/christel/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats
+        cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats
         bowtie2-build Arabidopsis_chrCp_chromosome_without_2_ir.fa Arabidopsis_chrCp_chromosome_without_2_ir_index
         
         
         for i in 1 2 3 4 5 6 8 9 10 11
         do
-        cd /binf-isilon/vintherlab/christel/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_2/$i
-        nice bowtie2 -p32 --very-sensitive -x /binf-isilon/vintherlab/christel/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats/Arabidopsis_chrCp_chromosome_without_2_ir_index -U ./output_dir/read1.fastq.gz 2>bowtie2.error | gzip > chrCp_mapped_without_2_ir2.sam.gz
-        nice /binf-isilon/vintherlab/christel/gwx263/scratch/Processed_Seqdata/scripts/rnaprob_scripts/summarize_unique_barcodes.sh -f chrCp_mapped_without_2_ir2.sam.gz -b ./output_dir/barcodes.txt -t -k -o summarized_chrCp_without_2_ir2 &
+        cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_2/$i
+        nice bowtie2 -p32 --very-sensitive -x /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats/Arabidopsis_chrCp_chromosome_without_2_ir_index -U ./output_dir/read1.fastq.gz 2>bowtie2.error | gzip > chrCp_mapped_without_2_ir2.sam.gz
+        nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_scripts/summarize_unique_barcodes.sh -f chrCp_mapped_without_2_ir2.sam.gz -b ./output_dir/barcodes.txt -t -k -o summarized_chrCp_without_2_ir2 &
                 
         done
         wait
@@ -76,10 +76,16 @@ if (( ${#FILES[@]}>0 ));
         
         for i in 1 2 3 4 5 6 8 9 10 11
         do
-        cd /binf-isilon/vintherlab/christel/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_2/$i
+        cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_2/$i
         gzip -k -d chrCp_mapped_without_2_ir2.sam.gz
         mkdir -p ./bamfiles/flagstat
         nice samtools view -b -u chrCp_mapped_without_2_ir2.sam >./bamfiles/chrCp_mapped_without_2_ir2.bam
         nice samtools flagstat ./bamfiles/chrCp_mapped_without_2_ir2.bam > ./bamfiles/flagstat/chrCp_mapped_without_2_ir2.bam_flagstats$i
         done
         wait 
+        
+        --------------------------------
+      
+        After mapping and summarizing, I move on to calculating EUC and GR´s:
+                
+         
