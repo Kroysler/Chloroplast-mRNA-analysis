@@ -51,7 +51,7 @@ if (( ${#FILES[@]}>0 ));
         #Complete chloroplast genome located at hestia at:
         /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats/Arabidopsis_chrCp_chromosome_without_2_ir.fa
                 
-        #MAPPING d. 27.11.17 ca. 12:43-  -  timer og  mins
+        #MAPPING d. 27.11.17 ca. 12:43-15:51  - 3 timer og 8 mins
         #1. Building bowtie2 index for mapping:
         #In “/binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles”
         #Main arguments
@@ -93,7 +93,7 @@ if (( ${#FILES[@]}>0 ));
         for chloroplast cdna:
         #Calculate EUC´s
                 
-        cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_2/$i
+        cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_2
         
         R
         
@@ -122,9 +122,9 @@ if (( ${#FILES[@]}>0 ));
         
         #Save R objects for future fast loading with the load():
         
-        save(euc_GRs_without_2_ir2, file="euc_GRs.Rsave")
+        save(euc_GRs_without_2_ir2, file="euc_GRs_without_2_ir2.Rsave")
         
-        save(comp_GRs_without_2_ir2, file="comp_GRs.Rsave")
+        save(comp_GRs_without_2_ir2, file="comp_GRs_without_2_ir2.Rsave")
         
                 
         
