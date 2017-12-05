@@ -1,0 +1,335 @@
+
+For Arabidopsis_thaliana.chromosome.Pt.manual.transcript.annotation :
+
+#MAPPING d. 26.2.17 ca. 15:53
+#1. Building bowtie2 index for mapping:
+#In “/seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/Manually_annotated_transcripts”
+#Main arguments
+#bowtie2-build [options]* <reference_in> <ebwt_base>
+#fasta filename: Arabidopsis_thaliana.chromosome.Pt.manual.transcript.annotation.fasta
+
+cd /seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/Manually_annotated_transcripts
+bowtie2-build Arabidopsis_thaliana.chromosome.Pt.manual.transcript.annotation.fasta Arabidopsis_thaliana.ChrCp.manual.annotation_index
+
+
+for i in 1 2 3 4 5 6 8 9 10 11
+do
+cd /seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_2/$i
+nice bowtie2 -p32 --norc -x /seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/Manually_annotated_transcripts/Arabidopsis_thaliana.ChrCp.manual.annotation_index -U ./output_dir/read1.fastq.gz 2>bowtie2_TAIR10_chr_all.error | gzip > manually_annotated_transcripts_mapped.sam.gz
+nice /seqdata/krogh/gwx263/scratch/Processed_Seqdata/scripts/rnaprob_scripts/summarize_unique_barcodes.sh -f manually_annotated_transcripts_mapped.sam.gz -b ./output_dir/barcodes.txt -t -k -o summarized_manually_annotated_transcripts &
+
+done
+wait
+
+
+
+--------------------------
+--------------------------
+
+
+After mapping and summarizing, I move on to calculating EUC and GR´s:
+
+
+for chloroplast manually annotated transcripts:
+#Calculate EUC´s
+
+cd /seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_2
+
+R
+
+library(RNAprobR)
+
+dir_names <- format(c(1,2,3,4,5,6,8,9,10,11), width=1, flag=0,trim=TRUE)
+
+#Read in the count information, and convert observed unique barcodes to estimated unique counts:
+
+euc_GRs <- list()
+
+for(index in dir_names) {
+
+euc_GRs[[index]] <- readsamples(samples=paste("./",index,"/summarized_manually_annotated_transcripts/unique_barcodes.txt", sep=""), euc="counts", k2n_files = paste("./",index,"/summarized_manually_annotated_transcripts/k2n.txt", sep=""))
+}
+
+#Compile positional information:
+
+comp_GRs <- list()
+
+for(index in dir_names){
+
+comp_GRs[[index]] <- comp(euc_GR=euc_GRs[[index]], fasta_file="/seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/Manually_annotated_transcripts/Arabidopsis_thaliana.chromosome.Pt.manual.transcript.annotation.fasta")
+
+}
+
+#Save R objects for future fast loading with the load():
+
+save(euc_GRs, file="euc_GRs.Rsave")
+
+save(comp_GRs, file="comp_GRs.Rsave")
+
+temp1 <- GR2norm_df(comp_GRs[[1]])
+boxplot(temp1$TC, ylim=c(0,1000))
+save(boxplot, file="boxplot.Rsave")
+
+
+
+#Normalisation
+index 1-3 are selection indicies with total RNA=> Perform slograt normalisation
+For the remaining samples different, either rRNA depletion or lightstress sets them apart.
+
+index4-5 are probed/unprobed unselected total RNA. 
+These samples can be normalised with slograt function windowsize 1 and then winsorised with the winsor or swinsor_vector function.
+
+
+
+#```{r Normalisation of the data -Ara1, Ara2 and Ara3}
+
+ara1_3_interesting_transcripts <- swinsor(comp_GRs[[1]], winsor_level = 0.9, window_size = 51,)
+ara1_3_interesting_transcripts <- swinsor(comp_GRs[[2]], winsor_level = 0.9, window_size = 51, add_to = ara1_3_interesting_transcripts)
+ara1_3_interesting_transcripts <- swinsor(comp_GRs[[3]], winsor_level = 0.9, window_size = 51, add_to = ara1_3_interesting_transcripts)
+
+----------------------------
+#compile unnormalized data
+ara1_3_interesting_transcripts_unnormalized <- swinsor(comp_GRs[[1]], winsor_level = 0.9, window_size = 51,)
+ara1_3_interesting_transcripts_unnormalized <- swinsor(comp_GRs[[2]], winsor_level = 0.9, window_size = 51, add_to = ara1_3_interesting_transcripts_unnormalized)
+ara1_3_interesting_transcripts_unnormalized <- swinsor(comp_GRs[[3]], winsor_level = 0.9, window_size = 51, add_to = ara1_3_interesting_transcripts_unnormalized)
+----------------------------
+
+
+ara1_3_interesting_transcripts_df <- GR2norm_df("ara1_3_interesting_transcripts", RNAid ="Interesting_transcripts")
+
+save(ara1_3_interesting_transcripts, file="ara1_3_interesting_transcripts.Rsave")
+save(ara1_3_interesting_transcripts_df, file="ara1_3_interesting_transcripts_df.Rsave")
+
+names(ara1_3_interesting_transcripts_df)[4:9] <- c("Ara1_swinsor", "Ara1_swinsor_sd","Ara2_swinsor", "Ara2_swinsor_sd","Ara3_swinsor", "Ara3_swinsor_sd")
+
+
+
+#UCSC browser BED format visualization
+norm2bedgraph(ara1_3_interesting_transcripts, bed_file="C:/Users/gwx263/OneDrive for Business/Ph.D/Probe mRNA structure in chloroplasts/Seq data processing & Debian/Feb 2017 analyse af interessante transcripts", norm_method="swinsor", genome_build="Feb 2011",bedgraph_out_file="out_file", track_name="swinsor", track_description="swinsor normalization")
+
+plotRNA(ara1_3_interesting_transcripts, RNAid ="ATCG00020", norm_method="swinsor", stat_cutoff="0.001")
+
+
+plotRNA(ara1_3_interesting_transcripts_unnormalized, RNAid ="ATCG00020", norm_method="swinsor", stat_cutoff="0.001")
+
+
+
+
+
+__________________________________________________________________
+
+Analysis of sample 8
+
+ara8_9_interesting_transcripts <- swinsor(comp_GRs[[7]], winsor_level = 0.9, window_size = 51,)
+ara8_9_interesting_transcripts <- swinsor(comp_GRs[[8]], winsor_level = 0.9, window_size = 51, add_to = ara8_9_interesting_transcripts)
+
+
+ara8_9_interesting_transcripts_df<-GR2norm_df(ara8_9_interesting_transcripts)
+
+names(ara8_9_interesting_transcripts_df)[4:7] <- c("Ara7_swinsor", "Ara7_swinsor_sd","Ara8_swinsor", "Ara8_swinsor_sd")
+
+save(ara8_9_interesting_transcripts, file="ara1_3_interesting_transcripts.Rsave")
+save(ara8_9_interesting_transcripts_df, file="ara1_3_interesting_transcripts_df.Rsave")
+
+
+
+plotRNA(ara8_9_interesting_transcripts, RNAid ="ATCG00020", norm_method="swinsor", stat_cutoff="0.001")
+
+
+__________________________________________________________________
+Analysis of sample 10 and 11 (doesnt work yet)
+
+ara10_11_interesting_transcripts <- swinsor(comp_GRs[[9]], winsor_level = 0.9, window_size = 51,)
+ara10_11_interesting_transcripts <- swinsor(comp_GRs[[10]], winsor_level = 0.9, window_size = 51, add_to = ara10_11_interesting_transcripts)
+
+
+ara10_11_interesting_transcripts_df<-GR2norm_df(ara10_11_interesting_transcripts)
+
+names(ara10_11_interesting_transcripts_df)[4:7] <- c("Ara10_swinsor", "Ara10_swinsor_sd","Ara11_swinsor", "Ara11_swinsor_sd")
+
+save(ara10_11_interesting_transcripts, file="ara10_11_interesting_transcripts.Rsave")
+save(ara10_11_interesting_transcripts_df, file="ara10_11_interesting_transcripts_df.Rsave")
+
+
+
+plotRNA(ara10_11_interesting_transcripts, RNAid ="ATCG00020", norm_method="swinsor", stat_cutoff="0.001")
+
+
+
+__________________________________________________________________
+
+Analysis of sample 10
+
+ara10_interesting_transcripts <- swinsor(comp_GRs[[9]], winsor_level = 0.9, window_size = 51,)
+
+
+ara10_interesting_transcripts_df<-GR2norm_df(ara10_interesting_transcripts)
+
+names(ara10_interesting_transcripts_df)[4:5] <- c("Ara10_swinsor", "Ara10_swinsor_sd")
+
+save(ara10_interesting_transcripts, file="ara10_interesting_transcripts.Rsave")
+save(ara10_interesting_transcripts_df, file="ara10_interesting_transcripts_df.Rsave")
+
+
+
+plotRNA(ara10_interesting_transcripts, RNAid ="ATCG00020", norm_method="swinsor", stat_cutoff="0.001")
+plotRNA(ara10_interesting_transcripts, RNAid ="ATCG00120-ATCG00160", norm_method="swinsor", stat_cutoff="0.001")
+plotRNA(ara10_interesting_transcripts, RNAid ="ATCG00220", norm_method="swinsor", stat_cutoff="0.001")
+plotRNA(ara10_interesting_transcripts, RNAid ="ATCG00270-ATCG00300", norm_method="swinsor", stat_cutoff="0.001")
+plotRNA(ara10_interesting_transcripts, RNAid ="ATCG00360-ATCG00380;", norm_method="swinsor", stat_cutoff="0.001")
+plotRNA(ara10_interesting_transcripts, RNAid ="ATCG00470-ATCG00490", norm_method="swinsor", stat_cutoff="0.001")
+plotRNA(ara10_interesting_transcripts, RNAid ="ATCG00660-ATCG00670", norm_method="swinsor", stat_cutoff="0.001")
+plotRNA(ara10_interesting_transcripts, RNAid ="ATCG00690-ATCG00730", norm_method="swinsor", stat_cutoff="0.001")
+plotRNA(ara10_interesting_transcripts, RNAid ="ATCG00740-ATCG00840", norm_method="swinsor", stat_cutoff="0.001")
+plotRNA(ara10_interesting_transcripts, RNAid ="ATCG01020", norm_method="swinsor", stat_cutoff="0.001")
+
+
+__________________________________________________________________
+12.3.2017
+Splitting sam files into plus and minus strand
+#for positive strand
+samtools view -F 0x10 -b input.bam > postiveStrand.sam
+
+#for negative strand 
+samtools view -f 0x10 -b input.bam > negativeStrand.sam
+
+for i in 1 2 3 4 5 6 8 9 10 11
+do
+cd /seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_2/$i
+nice samtools view -F 0x10 -b ./tophat_out/accepted_hits.bam > ./tophat_out/accepted_hits.positiveStrand.bam
+nice samtools view -f 0x10 -b ./tophat_out/accepted_hits.bam > ./tophat_out/accepted_hits.negativeStrand.bam
+done
+wait 
+
+#Indexing bamfiles
+for i in 1 2 3 4 5 6 8 9 10 11
+do
+cd /seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_2/$i
+nice samtools index ./tophat_out/accepted_hits.positiveStrand.bam
+nice samtools index ./tophat_out/accepted_hits.negativeStrand.bam
+done
+wait 
+
+
+
+
+
+#copy accepted_hits.bam (negativeStrand.sam and positiveStrand.sam) to "open" folder for UCSC upload
+
+for i in 2 3 4 5 6 8 9 10 11
+do
+cd /seqdata/krogh/gwx263/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_2/$i/tophat_out
+cp ./accepted_hits.positiveStrand.bam /data/www/gwx263/m7G/Chloroplast_bam/$i/accepted_hits.positiveStrand.bam
+cp ./accepted_hits.negativeStrand.bam /data/www/gwx263/m7G/Chloroplast_bam/$i/accepted_hits.negativeStrand.bam
+cp ./accepted_hits.positiveStrand.bam.bai /data/www/gwx263/m7G/Chloroplast_bam/$i/accepted_hits.positiveStrand.bam.bai
+cp ./accepted_hits.negativeStrand.bam.bai /data/www/gwx263/m7G/Chloroplast_bam/$i/accepted_hits.negativeStrand.bam.bai
+done
+wait
+
+__________________________________________________________________
+#Upload of positive strand reads to UCSC
+
+1:
+track type=bam name="chrCp bam sample 1 positive" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/1/accepted_hits.positiveStrand.bam colorByStrand="0,0,255 255,0,0"
+browser position chrCp:43,000-46,000
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/1/accepted_hits.positiveStrand.bam.bai
+
+2:
+track type=bam name="chrCp bam sample 2 positive" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/2/accepted_hits.positiveStrand.bam colorByStrand="0,0,255 255,0,0"
+browser position chrCp:43,000-46,000
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/2/accepted_hits.positiveStrand.bam.bai
+
+3:
+track type=bam name="chrCp bam sample 3 positive" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/3/accepted_hits.positiveStrand.bam colorByStrand="0,0,255 255,0,0"
+browser position chrCp:43,000-46,000 
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/3/accepted_hits.positiveStrand.bam.bai
+
+4:
+track type=bam name="chrCp bam sample 4 positive" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/4/accepted_hits.positiveStrand.bam colorByStrand="0,0,255 255,0,0"
+browser position chrCp:43,000-46,000 
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/4/accepted_hits.positiveStrand.bam.bai
+
+5:
+track type=bam name="chrCp bam sample 5 positive" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/5/accepted_hits.positiveStrand.bam colorByStrand="0,0,255 255,0,0"
+browser position chrCp:43,000-46,000 
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/5/accepted_hits.positiveStrand.bam.bai
+
+6:
+track type=bam name="chrCp bam sample 6 positive" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/6/accepted_hits.positiveStrand.bam colorByStrand="0,0,255 255,0,0"
+browser position chrCp:43,000-46,000 
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/6/accepted_hits.positiveStrand.bam.bai
+
+8:
+track type=bam name="chrCp bam sample 8 positive" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/8/accepted_hits.positiveStrand.bam colorByStrand="0,0,255 255,0,0"
+browser position chrCp:43,000-46,000 
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/8/accepted_hits.positiveStrand.bam.bai
+
+9:
+track type=bam name="chrCp bam sample 9 positive" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/9/accepted_hits.positiveStrand.bam colorByStrand="0,0,255 255,0,0"
+browser position chrCp:43,000-46,000 
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/9/accepted_hits.positiveStrand.bam.bai
+
+10:
+track type=bam name="chrCp bam sample 10 positive" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/10/accepted_hits.positiveStrand.bam colorByStrand="0,0,255 255,0,0"
+browser position chrCp:43,000-46,000 
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/10/accepted_hits.positiveStrand.bam.bai
+
+11:
+track type=bam name="chrCp bam sample 11 positive" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/11/accepted_hits.positiveStrand.bam colorByStrand="0,0,255 255,0,0"
+browser position chrCp:43,000-46,000 
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/11/accepted_hits.positiveStrand.bam.bai
+
+
+_________________________________________________________________
+#Upload of negative strand reads to UCSC
+
+1:
+track type=bam name="chrCp bam sample 1 negative" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/1/accepted_hits.negativeStrand.bam 
+browser position chrCp:73,500-75,000
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/1/accepted_hits.negativeStrand.bam.bai
+
+2:
+track type=bam name="chrCp bam sample 2 negative" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/2/accepted_hits.negativeStrand.bam 
+browser position chrCp:73,500-75,000
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/2/accepted_hits.negativeStrand.bam.bai
+
+3:
+track type=bam name="chrCp bam sample 3 negative" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/3/accepted_hits.negativeStrand.bam 
+browser position chrCp:73,500-75,000 
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/3/accepted_hits.negativeStrand.bam.bai
+
+4:
+track type=bam name="chrCp bam sample 4 negative" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/4/accepted_hits.negativeStrand.bam 
+browser position chrCp:73,500-75,000 
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/4/accepted_hits.negativeStrand.bam.bai
+
+5:
+track type=bam name="chrCp bam sample 5 negative" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/5/accepted_hits.negativeStrand.bam 
+browser position chrCp:73,500-75,000 
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/5/accepted_hits.negativeStrand.bam.bai
+
+6:
+track type=bam name="chrCp bam sample 6 negative" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/6/accepted_hits.negativeStrand.bam 
+browser position chrCp:73,500-75,000 
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/6/accepted_hits.negativeStrand.bam.bai
+
+8:
+track type=bam name="chrCp bam sample 8 negative" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/8/accepted_hits.negativeStrand.bam 
+browser position chrCp:73,500-75,000 
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/8/accepted_hits.negativeStrand.bam.bai
+
+9:
+track type=bam name="chrCp bam sample 9 negative" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/9/accepted_hits.negativeStrand.bam 
+browser position chrCp:73,500-75,000 
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/9/accepted_hits.negativeStrand.bam.bai
+
+10:
+track type=bam name="chrCp bam sample 10 negative" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/10/accepted_hits.negativeStrand.bam 
+browser position chrCp:73,500-75,000 
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/10/accepted_hits.negativeStrand.bam.bai
+
+11:
+track type=bam name="chrCp bam sample 11 negative" bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/11/accepted_hits.negativeStrand.bam 
+browser position chrCp:73,500-75,000 
+bigDataUrl=http://people.binf.ku.dk/~gwx263/data/m7G/Chloroplast_bam/11/accepted_hits.negativeStrand.bam.bai
+
