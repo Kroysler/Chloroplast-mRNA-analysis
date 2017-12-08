@@ -47,4 +47,56 @@ nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_
 done
 wait
 
+#################
+2nd comparison!
+For comparison of:
+  Manually annotated fasta: Arabidopsis_thaliana.chromosome.Pt.manual.transcript.annotation
+  Inverted repeat fasta:    Arabidopsis_chrCp_chromosome_without_2_ir.fa
+  #As the analysis of the manually annotated mRNAs gave rise to a compiled file with many RT stops and since that has not been the case for
+  the other fasta sequences that should be similar, I am conducting an analysis of the scripts.
+  
+
+#MAPPING d. 08.12.17 ca. 14:40
+#1. Building bowtie2 index for mapping:
+#In “/binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/Manually_annotated_transcripts”
+#Main arguments
+#bowtie2-build [options]* <reference_in> <ebwt_base>
+#fasta filename: Arabidopsis_thaliana.chromosome.Pt.manual.transcript.annotation.fasta
+
+cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/Manually_annotated_transcripts
+bowtie2-build Arabidopsis_thaliana.chromosome.Pt.manual.transcript.annotation.fasta Arabidopsis_thaliana.ChrCp.manual.annotation_TEST2_index
+
+
+for i in 1 2 3 4 5 6 8 9 10 11
+do
+cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_2/$i
+nice bowtie2 -p32 -x /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/Manually_annotated_transcripts/Arabidopsis_thaliana.ChrCp.manual.annotation_TEST2_index -U ./output_dir/read1.fastq.gz 2>manually.test2.error | gzip > manually_annotated_transcripts_mapped_TEST2.sam.gz
+nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_scripts/summarize_unique_barcodes.sh -f manually_annotated_transcripts_mapped_TEST2.sam.gz -b ./output_dir/barcodes.txt -t -k -o summarized_manually_annotated_transcripts_TEST2 &
+
+done
+wait
+
+#######
+
+#MAPPING d. 08.12.17 ca. 
+#1. Building bowtie2 index for mapping:
+#In “/binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats”
+#Main arguments
+#bowtie2-build [options]* <reference_in> <ebwt_base>
+#fasta filename: Arabidopsis_chrCp_chromosome_without_2_ir.fa
+
+cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats
+bowtie2-build Arabidopsis_chrCp_chromosome_without_2_ir.fa Arabidopsis_chrCp_chromosome_without_2_ir_TEST2_index
+
+
+for i in 1 2 3 4 5 6 8 9 10 11
+do
+cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_2/$i
+nice bowtie2 -p32 -x /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats/Arabidopsis_chrCp_chromosome_without_2_ir_TEST2_index -U ./output_dir/read1.fastq.gz 2>inverted.test2.error | gzip > Arabidopsis_without_ir_TEST2.sam.gz
+nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_scripts/summarize_unique_barcodes.sh -f Arabidopsis_without_ir_TEST2.sam.gz -b ./output_dir/barcodes.txt -t -k -o summarized_without_ir_TEST2 &
+
+done
+wait
+
+
 
