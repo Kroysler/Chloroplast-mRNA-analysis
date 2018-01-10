@@ -98,5 +98,36 @@ nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_
 done
 wait
 
+####
+Redoing analysis 
+' to accomodate next-seq G trimming (because of G-trimming)
+' to conduct more precise mapping 
+' to avoid and remove PCR duplicates
+
+10.01.18 
+#I have odd results and have not previously corrected for NEXT-seq G-rich sequences. I will also conduct a more sensitive mapping and correct for PCR bias.
+#Guide for RNA probing software: http://people.binf.ku.dk/lukasz/Guide.html
+#Using cutadapt to remove adapter sequences and trim by length/quality:
+#cutadapt -a $ADAPTER_SEQUENCE -q 17  -m 40 output.fastq input.fastq
+
+
+Removing adapters and low quality reads 
+
+
+cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters
+proj=chloroplast_with_nextcutadapt
+mkdir /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/$proj #create folder for project
+for lab_number in 1 2 3 4 5 6 8 9 10 11
+do
+FILES=(/binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/"$lab_number"-*R1*.fastq.gz)
+if (( ${#FILES[@]}>0 ));
+then
+cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/$proj
+mkdir $lab_number
+cd $lab_number
+nice zcat /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/"$lab_number"-*R1*.fastq.gz | nice cutadapt -a AGATCGGAAGAGCACACGTCT --nextseq-trim=20 --minimum-length=50 - 2>$proj.$lab_number.R1.cutadapt.error | gzip > trimmed_"$lab_number"-*R1*.fastq.gz
+fi
+done
+wait
 
 
