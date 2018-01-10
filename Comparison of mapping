@@ -130,4 +130,39 @@ fi
 done
 wait
 
+Preprocessing reads: ca. 9:35-12:31 (ca. 3 timer)
+#mkdir -p /seqdata/krogh/gwx263/scratch/Processed_Seqdata/scripts/rnaprob_scripts 
+#cd /seqdata/krogh/gwx263/scratch/Processed_Seqdata/scripts/rnaprob_scripts
+#wget http://people.binf.ku.dk/~jvinther/data/rna_probing/RNAprobBash.tar.gz
+#tar -zxf RNAprobBash.tar.gz
+#PATH=$PATH:/seqdata/krogh/gwx263/scratch/Processed_Seqdata/scripts/rnaprob_scripts
+# Add the scripts location to the path 
+
+for i in 1 2 3 4 5 6 8 9 10 11
+do
+
+cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_with_nextcutadapt//$i 
+/binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_scripts/preprocessing.sh -b NNNNNNN -t 15 -1 $i-*R*.fastq.gz
+gzip ./output_dir/read1.fastq
+done
+
+#MAPPING d. 08.12.17 ca. 14:40
+#1. Building bowtie2 index for mapping:
+#In “/binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/Manually_annotated_transcripts”
+#Main arguments
+#bowtie2-build [options]* <reference_in> <ebwt_base>
+#fasta filename: Arabidopsis_thaliana.chromosome.Pt.manual.transcript.annotation.fasta
+
+cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/Manually_annotated_transcripts
+bowtie2-build Arabidopsis_thaliana.chromosome.Pt.manual.transcript.annotation.fasta Arabidopsis_thaliana.ChrCp.manual.annotation_TEST2_index
+
+
+for i in 1 2 3 4 5 6 8 9 10 11
+do
+cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_with_nextcutadapt/$i
+nice bowtie2 -p32 -x /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/Manually_annotated_transcripts/Arabidopsis_thaliana.ChrCp.manual.annotation_TEST2_index -U ./output_dir/read1.fastq.gz 2>manually.test3.error | gzip > manually_annotated_transcripts_mapped_TEST3.sam.gz
+nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_scripts/summarize_unique_barcodes.sh -f manually_annotated_transcripts_mapped_TEST3.sam.gz -b ./output_dir/barcodes.txt -t -k -o summarized_manually_annotated_transcripts_TEST3 &
+
+done
+wait
 
