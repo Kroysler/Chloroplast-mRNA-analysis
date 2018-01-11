@@ -146,7 +146,7 @@ cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/H
 gzip ./output_dir/read1.fastq
 done
 
-#MAPPING d. 08.12.17 ca. 14:40
+#MAPPING d. 10.01.18
 #1. Building bowtie2 index for mapping:
 #In “/binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/Manually_annotated_transcripts”
 #Main arguments
@@ -165,4 +165,15 @@ nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_
 
 done
 wait
+
+###As the cutadapt nextseq did not have an effect, I will try with a more sensitive mapping:
+11.01.01 kl. ca 15.32
+for i in 1 2 3 4 5 6 8 9 10 11
+do
+cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_with_nextcutadapt/$i
+nice bowtie2 --norc -N 1 -D 20 -R 3 -L 15 -p32 -x /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/Manually_annotated_transcripts/Arabidopsis_thaliana.ChrCp.manual.annotation_TEST2_index -U ./output_dir/read1.fastq.gz 2>manually.test4.error | gzip > manually_annotated_transcripts_mapped_TEST4.sam.gz
+nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_scripts/summarize_unique_barcodes.sh -f manually_annotated_transcripts_mapped_TEST4.sam.gz -b ./output_dir/barcodes.txt -t -k -o summarized_manually_annotated_transcripts_TEST4 &
+done
+wait
+
 
