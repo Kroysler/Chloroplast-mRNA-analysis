@@ -198,3 +198,24 @@ nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_
 
 done
 wait
+
+
+##For comparison I will map to the inverted fasta aswell:
+#MAPPING d. 14.01.18 kl. ca. 21
+#1. Building bowtie2 index for mapping:
+#In “/binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats/”
+#Main arguments
+#bowtie2-build [options]* <reference_in> <ebwt_base>
+#fasta filename: Arabidopsis_chrCp_chromosome_without_2_ir.fa
+
+cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats
+bowtie2-build Arabidopsis_chrCp_chromosome_without_2_ir.fa Arabidopsis_chrCp_chromosome_without_2_ir.fa.index
+
+
+for i in 1 2 3 4 5 6 8 9 10 11
+do
+cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_with_nextcutadapt/$i
+nice bowtie2 --norc -N 1 -D 20 -R 3 -L 15 -p32 -x /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats/Arabidopsis_chrCp_chromosome_without_2_ir.fa.index -U ./output_dir/read1.fastq.gz 2>inverted_test.error | gzip > inverted_test.sam.gz
+nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_scripts/summarize_unique_barcodes.sh -f inverted_test.sam.gz -b ./output_dir/barcodes.txt -t -k -o summarized.inverted_test.sam.gz &
+done
+wait
