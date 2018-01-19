@@ -219,3 +219,31 @@ nice bowtie2 --norc -N 1 -D 20 -R 3 -L 15 -p32 -x /binf-isilon/vintherlab/christ
 nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_scripts/summarize_unique_barcodes.sh -f inverted_test.sam.gz -b ./output_dir/barcodes.txt -t -k -o summarized.inverted_test.sam.gz &
 done
 wait
+
+
+##For comparison I will map to a genomic full fasta from ensemble plant (ftp://ftp.ensemblgenomes.org/pub/plants/release-38/fasta/arabidopsis_thaliana/dna/)
+#This file has had repeats foun with repeatmasker removed (shown with .rm)
+
+#MAPPING d. 19.01.18 kl. ca. 12
+#1. Building bowtie2 index for mapping:
+#In “/binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/Chloroplast_fasta_and_index_files/Arabidopsis_thaliana.TAIR10.dna_rm.chromosome.Pt.fa”
+#Main arguments
+#bowtie2-build [options]* <reference_in> <ebwt_base>
+#fasta filename: Arabidopsis_thaliana.TAIR10.dna_rm.chromosome.Pt.fa
+
+cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/Chloroplast_fasta_and_index_files/Arabidopsis_thaliana.TAIR10.dna_rm.chromosome.Pt.fa
+bowtie2-build Arabidopsis_thaliana.TAIR10.dna_rm.chromosome.Pt.fa Arabidopsis_thaliana.TAIR10.dna_rm.chromosome.Pt.fa.index
+
+
+for i in 1 2 3 4 5 6 8 9 10 11
+do
+cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_with_nextcutadapt/$i
+nice bowtie2 --norc -N 1 -D 20 -R 3 -L 15 -p32 -x /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/Chloroplast_fasta_and_index_files/Arabidopsis_thaliana.TAIR10.dna_rm.chromosome.Pt.fa/Arabidopsis_thaliana.TAIR10.dna_rm.chromosome.Pt.fa.index -U ./output_dir/read1.fastq.gz 2>tair.Pt.rm_test.error | gzip > tair.Pt.rm_test.sam.gz
+nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_scripts/summarize_unique_barcodes.sh -f tair.Pt.rm_test.sam.gz -b ./output_dir/barcodes.txt -t -k -o tair.Pt.rm_test.sam.gz &
+done
+wait
+
+
+
+
+
