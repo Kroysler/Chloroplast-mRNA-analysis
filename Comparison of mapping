@@ -243,7 +243,14 @@ nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_
 done
 wait
 
-
-
+#MAPPING d. 25.01.18 kl. ca. 12:49
+#mapper til pt.genome men uden norc
+for i in 1 2 3 4 5 6 8 9 10 11
+do
+cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_with_nextcutadapt/$i
+nice bowtie2 -N 1 -D 20 -R 3 -L 15 -p32 -x /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/Chloroplast_fasta_and_index_files/Arabidopsis_thaliana.TAIR10.dna_rm.chromosome.Pt.fa/Arabidopsis_thaliana.TAIR10.dna_rm.chromosome.Pt.fa.index -U ./output_dir/read1.fastq.gz 2>tair.Pt.rm_test.error | gzip > tair.Pt.rm_test.sam.gz
+nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_scripts/summarize_unique_barcodes.sh -f tair.Pt.rm_test.sam.gz -b ./output_dir/barcodes.txt -t -k -o tair.Pt.rm_test.sam.gz &
+done
+wait
 
 
