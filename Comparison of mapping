@@ -235,22 +235,31 @@ cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/I
 bowtie2-build Arabidopsis_thaliana.TAIR10.dna_rm.chromosome.Pt.fa Arabidopsis_thaliana.TAIR10.dna_rm.chromosome.Pt.fa.index
 
 
-for i in 1 2 3 4 5 6 8 9 10 11
+#forgot to write output folder correctly, redoing the mapping from 25.01.18 and just for sample 1 (today: 26.01.18)
+for i in 1 
 do
 cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_with_nextcutadapt/$i
 nice bowtie2 --norc -N 1 -D 20 -R 3 -L 15 -p32 -x /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/Chloroplast_fasta_and_index_files/Arabidopsis_thaliana.TAIR10.dna_rm.chromosome.Pt.fa/Arabidopsis_thaliana.TAIR10.dna_rm.chromosome.Pt.fa.index -U ./output_dir/read1.fastq.gz 2>tair.Pt.rm_test.error | gzip > tair.Pt.rm_test.sam.gz
-nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_scripts/summarize_unique_barcodes.sh -f tair.Pt.rm_test.sam.gz -b ./output_dir/barcodes.txt -t -k -o tair.Pt.rm_test.sam.gz &
+nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_scripts/summarize_unique_barcodes.sh -f tair.Pt.rm_test.sam.gz -b ./output_dir/barcodes.txt -t -k -o summarized.tair.Pt.rm_test &
 done
 wait
 
 #MAPPING d. 25.01.18 kl. ca. 12:49
 #mapper til pt.genome men uden norc
-for i in 1 2 3 4 5 6 8 9 10 11
+for i in 1 
 do
 cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_with_nextcutadapt/$i
-nice bowtie2 -N 1 -D 20 -R 3 -L 15 -p32 -x /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/Chloroplast_fasta_and_index_files/Arabidopsis_thaliana.TAIR10.dna_rm.chromosome.Pt.fa/Arabidopsis_thaliana.TAIR10.dna_rm.chromosome.Pt.fa.index -U ./output_dir/read1.fastq.gz 2>tair.Pt.rm_test.error | gzip > tair.Pt.rm_test.sam.gz
-nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_scripts/summarize_unique_barcodes.sh -f tair.Pt.rm_test.sam.gz -b ./output_dir/barcodes.txt -t -k -o tair.Pt.rm_test.sam.gz &
+nice bowtie2 -N 1 -D 20 -R 3 -L 15 -p32 -x /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/Chloroplast_fasta_and_index_files/Arabidopsis_thaliana.TAIR10.dna_rm.chromosome.Pt.fa/Arabidopsis_thaliana.TAIR10.dna_rm.chromosome.Pt.fa.index -U ./output_dir/read1.fastq.gz 2>tair.Pt.rm_test2.error | gzip > tair.Pt.rm_test2.sam.gz
+nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_scripts/summarize_unique_barcodes.sh -f tair.Pt.rm_test2.sam.gz -b ./output_dir/barcodes.txt -t -k -o summarized.tair.Pt.rm_test2 &
 done
 wait
 
-
+###redoing mapping of inverted repeat without inverted repeat
+#26.01.18
+for i in 1
+do
+cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_with_nextcutadapt/$i
+nice bowtie2 -N 1 -D 20 -R 3 -L 15 -p32 -x /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/plastid_genome_minus_inverted_repeats/Arabidopsis_chrCp_chromosome_without_2_ir.fa.index -U ./output_dir/read1.fastq.gz 2>inverted_test2.error | gzip > inverted_test2.sam.gz
+nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_scripts/summarize_unique_barcodes.sh -f inverted_test2.sam.gz -b ./output_dir/barcodes.txt -t -k -o summarized.inverted_test2 &
+done
+wait
