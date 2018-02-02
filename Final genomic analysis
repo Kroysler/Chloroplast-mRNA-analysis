@@ -6,13 +6,13 @@
 #fasta filename: "Arabidopsis_chrCp_chromosome_without_2_ir_reverse_complement.fa"
 
 cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris
-bowtie2-build Arabidopsis_chrCp_chromosome_without_2_ir_reverse_complement.fa Ara_chrCp_chromosome_without_2_ir_rc.fa.index
+bowtie2-build Arabidopsis_chrCp_chromosome_without_2_ir_reverse_complement.fa Ara_chrCp_chromosome_without_2_ir_rc.index
 
 
 for i in 1 2 3 4 5 6 8 9 10 11
 do
 cd /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/HHTKHBGXY/N127/trimmedadapters/chloroplast_final/$i
-nice bowtie2 --norc -N 1 -D 20 -R 3 -L 15 -p32 -x /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/Ara_chrCp_chromosome_without_2_ir_rc.fa.index -U ./output_dir/read1.fastq.gz 2>chr_without_ir_rc | gzip > chr_without_ir_rc.sam.gz
+nice bowtie2 --norc -N 1 -D 20 -R 3 -L 15 -p32 -x /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/chloroplast_mRNA/Indexfiles/From_LarsBoris/Ara_chrCp_chromosome_without_2_ir_rc.index -U ./output_dir/read1.fastq.gz 2>chr_without_ir_rc | gzip > chr_without_ir_rc.sam.gz
 nice /binf-isilon/vintherlab/christel/scratch/Processed_Seqdata/scripts/rnaprob_scripts/summarize_unique_barcodes.sh -f chr_without_ir_rc.sam.gz -b ./output_dir/barcodes.txt -t -k -o summarized.chr_without_ir_rc.sam.gz &
 done
 wait
